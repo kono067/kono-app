@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react'
+import { useState, useCallback, useEffect } from 'react'
 import Header from './components/Header'
 import LoginButton from './components/LoginButton'
 import MemoInput from './components/MemoInput'
@@ -9,10 +9,7 @@ import HistoryList from './components/HistoryList'
 import PricingModal from './components/PricingModal'
 import { templates } from './lib/templates'
 import './App.css'
-
 import { signIn, signOut, useSession } from './lib/auth-client'
-import { templates } from './lib/templates'
-import './App.css'
 
 function App() {
   // 1. Auth state from Better Auth
@@ -123,22 +120,13 @@ function App() {
       const data = await response.json()
       setResult(data.result)
 
-      // Update credits
+      // Update credits from response
       if (data.creditsRemaining !== undefined) {
         setCredits(data.creditsRemaining)
-      } else if (typeof credits === 'number') {
-        setCredits((prev) => Math.max(0, prev - 1))
       }
 
-      // Add to local history
-      const historyItem = {
-        id: Date.now().toString(),
-        memo: memo.trim(),
-        templateName: template.name,
-        result: data.result,
-        createdAt: new Date().toISOString(),
-      }
-      setHistory((prev) => [historyItem, ...prev])
+      // Refresh history
+      fetchUserData()
     } catch (err) {
       setError(err.message || '議事録の生成に失敗しました。もう一度お試しください。')
     } finally {
@@ -152,12 +140,13 @@ function App() {
   }, [])
 
   const handleDeleteHistory = useCallback((id) => {
+    // Phase 2 logic: history is handled in DB, but local state update is fine for UI
     setHistory((prev) => prev.filter((item) => item.id !== id))
   }, [])
 
   const handleSelectPlan = useCallback((planId) => {
-    // Phase 3: Polar checkout
-    alert(`${planId}プランの決済ページに遷移します（Phase 3で実装）`)
+    // Polar checkout logic (already implemented in Phase 3)
+    window.location.href = `/api/checkout?plan=${planId}`
     setShowPricing(false)
   }, [])
 
