@@ -1,57 +1,105 @@
 import { GoogleGenAI } from "@google/genai";
+import { auth } from "../src/lib/auth";
+import { db } from "../src/lib/db";
+import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { memo, templatePrompt, templateName } = req.body;
+  // 1. 認証セッションの取得
+  const session = await auth.getSession({
+    headers: req.headers
+  });
 
-  if (!memo) {
-    return res.status(400).json({ error: 'Memo is required' });
+  if (!session || !session.user) {
+    return res.status(401).json({ error: 'ログインが必要です' });
   }
 
-  const apiKey = process.env.GEMINI_API_KEY;
-  if (!apiKey) {
-    return res.status(500).json({ error: 'Gemini API key is not configured' });
+  const userId = session.user.id;
+  const { memo, templatePrompt, templateName, templateId } = req.body;
+
+  if (!memo) {
+    return res.status(400).json({ error: 'メモを入力してください' });
   }
 
   try {
+    // 2. クレジット確認
+    let userCredits = await db
+      .selectFrom('credits')
+      .selectAll()
+      .where('userId', '=', userId)
+      .executeTakeFirst();
+
+    // 初回ログイン時のクレジット付与 (もしDBになければ)
+    if (!userCredits) {
+      const now = new Date();
+      await db.insertInto('credits')
+        .values({
+          userId,
+          amount: 5,
+          plan: 'free',
+          updatedAt: now
+        })
+        .execute();
+      userCredits = { amount: 5 };
+    }
+
+    if (userCredits.amount <= 0 && userCredits.plan !== 'matsu') {
+      return res.status(403).json({ error: 'クレジットが不足しています。プランをアップグレードしてください。' });
+    }
+
+    // 3. Gemini API での生成
+    const apiKey = process.env.GEMINI_API_KEY;
     const genAI = new GoogleGenAI(apiKey);
     const model = genAI.getGenerativeModel({ model: "gemini-1.5-flash" });
 
-    const prompt = `あなたは会議議事録を作成するアシスタントです。
-ユーザーが入力した会議メモを、指定されたテンプレート形式に整理して議事録を作成してください。
-
-ルール：
-- メモの内容を正確に反映すること
-- メモにない情報を勝手に追加しないこと
-- 各セクションに該当する内容がない場合は「特になし」と記載すること
-- 敬語・丁寧語で記載すること
-- 簡潔でわかりやすい文章にすること
-
-以下のメモを「${templateName}」テンプレートの形式で議事録にしてください。
-
-テンプレート形式：
+    const prompt = `あなたは議事録作成アシスタントです。提供されたメモを「${templateName}」の形式に整理してください。
+    
+テンプレート形式:
 ${templatePrompt}
 
-メモ：
+メモ:
 ${memo}`;
 
     const result = await model.generateContent(prompt);
     const response = await result.response;
     const text = response.text();
 
-    // In Phase 1, we don't have DB/Credit logic yet, so we just return the result.
-    // We'll add user session checking and credit deduction in Phase 2.
-    
+    // 4. 履歴の保存とクレジットの消費をアトミックに実行（風に）
+    await db.transaction().execute(async (trx) => {
+      // 履歴保存
+      await trx.insertInto('history')
+        .values({
+          id: uuidv4(),
+          userId,
+          memo,
+          templateName,
+          result: text,
+          createdAt: new Date()
+        })
+        .execute();
+
+      // クレジット消費 (松プラン以外)
+      if (userCredits.plan !== 'matsu') {
+        await trx.updateTable('credits')
+          .set({
+            amount: userCredits.amount - 1,
+            updatedAt: new Date()
+          })
+          .where('userId', '=', userId)
+          .execute();
+      }
+    });
+
     return res.status(200).json({
       result: text,
-      // For demo purposes in Phase 1
-      creditsRemaining: 4 
+      creditsRemaining: userCredits.plan === 'matsu' ? 'unlimited' : userCredits.amount - 1
     });
+
   } catch (error) {
-    console.error('Gemini API Error:', error);
-    return res.status(500).json({ error: 'Failed to generate minutes. Please try again.' });
+    console.error('Generation Logic Error:', error);
+    return res.status(500).json({ error: '議事録の生成中にエラーが発生しました。' });
   }
 }

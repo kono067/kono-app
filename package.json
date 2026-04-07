@@ -12,10 +12,10 @@
   "dependencies": {
     "@google/genai": "^1.0.0",
     "@libsql/client": "^0.14.0",
+    "@libsql/kysely-libsql": "^0.4.0",
     "@polar-sh/sdk": "^0.30.0",
     "better-auth": "^1.2.0",
     "kysely": "^0.27.0",
-    "@libsql/kysely-libsql": "^0.4.0",
     "react": "^19.2.4",
     "react-dom": "^19.2.4",
     "uuid": "^11.1.0"
@@ -25,6 +25,7 @@
     "@types/react": "^19.2.14",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.1",
+    "dotenv": "^17.4.1",
     "eslint": "^9.39.4",
     "eslint-plugin-react-hooks": "^7.0.1",
     "eslint-plugin-react-refresh": "^0.5.2",

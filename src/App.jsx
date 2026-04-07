@@ -10,45 +10,73 @@ import PricingModal from './components/PricingModal'
 import { templates } from './lib/templates'
 import './App.css'
 
-// For Phase 1 demo: simulate logged-in user
-const DEMO_MODE = true
+import { signIn, signOut, useSession } from './lib/auth-client'
+import { templates } from './lib/templates'
+import './App.css'
 
 function App() {
-  // Auth state
-  const [user, setUser] = useState(
-    DEMO_MODE ? { name: 'テストユーザー', email: 'test@example.com', image: null } : null
-  )
+  // 1. Auth state from Better Auth
+  const { data: session, isPending: authPending } = useSession()
+  const user = session?.user
 
-  // Core state
+  // 2. Core business state
   const [memo, setMemo] = useState('')
   const [selectedTemplate, setSelectedTemplate] = useState('internal')
   const [result, setResult] = useState('')
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  // Credit state
-  const [credits, setCredits] = useState(DEMO_MODE ? 5 : null)
+  // 3. User data state (Synced from DB)
+  const [credits, setCredits] = useState(null)
   const [currentPlan, setCurrentPlan] = useState('free')
+  const [history, setHistory] = useState([])
 
-  // UI state
+  // 4. UI state
   const [showHistory, setShowHistory] = useState(false)
   const [showPricing, setShowPricing] = useState(false)
-  const [history, setHistory] = useState([])
+
+  // Sync user data when logged in
+  useEffect(() => {
+    if (user) {
+      fetchUserData()
+    } else {
+      // Clear state on logout
+      setCredits(null)
+      setHistory([])
+      setResult('')
+    }
+  }, [user])
+
+  const fetchUserData = async () => {
+    try {
+      const res = await fetch('/api/user-data')
+      if (res.ok) {
+        const data = await res.json()
+        setCredits(data.credits)
+        setCurrentPlan(data.plan)
+        setHistory(data.history)
+      }
+    } catch (err) {
+      console.error('Failed to fetch user data:', err)
+    }
+  }
 
   const hasCredits = credits === 'unlimited' || (typeof credits === 'number' && credits > 0)
 
-  const handleLogin = useCallback(() => {
-    // Phase 2: Better Auth Google login
-    // For now, simulate login
-    setUser({ name: 'テストユーザー', email: 'test@example.com', image: null })
-    setCredits(5)
+  const handleLogin = useCallback(async () => {
+    try {
+      await signIn.social({
+        provider: "google",
+        callbackURL: window.location.origin
+      })
+    } catch (err) {
+      setError('ログインに失敗しました')
+    }
   }, [])
 
-  const handleLogout = useCallback(() => {
-    setUser(null)
-    setCredits(null)
-    setResult('')
-    setHistory([])
+  const handleLogout = useCallback(async () => {
+    await signOut()
+    window.location.reload()
   }, [])
 
   const handleGenerate = useCallback(async () => {
@@ -124,6 +152,16 @@ function App() {
     alert(`${planId}プランの決済ページに遷移します（Phase 3で実装）`)
     setShowPricing(false)
   }, [])
+
+  // Loading state for initial session check
+  if (authPending) {
+    return (
+      <div className="app-loading">
+        <div className="spinner"></div>
+        <p>読み込み中...</p>
+      </div>
+    )
+  }
 
   // Not logged in
   if (!user) {
