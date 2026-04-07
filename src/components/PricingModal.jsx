@@ -89,15 +89,14 @@ export default function PricingModal({ onClose, onSelectPlan, currentPlan }) {
                 ))}
               </ul>
 
-              <button
-                className={`btn ${plan.popular ? 'btn-primary' : 'btn-secondary'} pricing-select-btn`}
-                onClick={() => onSelectPlan(plan.id)}
-                disabled={currentPlan === plan.id}
-                type="button"
+              <a
+                href={currentPlan === plan.id ? '#' : `/api/checkout?plan=${plan.id}`}
+                className={`btn ${plan.popular ? 'btn-primary' : 'btn-secondary'} pricing-select-btn ${currentPlan === plan.id ? 'disabled' : ''}`}
                 id={`select-plan-${plan.id}`}
+                style={{ textDecoration: 'none', display: 'flex', justifyContent: 'center' }}
               >
                 {currentPlan === plan.id ? '利用中' : 'このプランを選択'}
-              </button>
+              </a>
             </div>
           ))}
         </div>

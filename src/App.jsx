@@ -39,6 +39,14 @@ function App() {
   useEffect(() => {
     if (user) {
       fetchUserData()
+      
+      // Handle success redirect from Polar
+      const params = new URLSearchParams(window.location.search)
+      if (params.get('success') === 'true') {
+        alert('決済が完了しました！クレジットが反映されるまで数分かかる場合があります。')
+        // Remove parameter from URL
+        window.history.replaceState({}, document.title, "/")
+      }
     } else {
       // Clear state on logout
       setCredits(null)
