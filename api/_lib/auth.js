@@ -1,3 +1,4 @@
+// Auth configuration for Better Auth
 import { betterAuth } from "better-auth";
 import { kyselyAdapter } from "better-auth/adapters/kysely";
 import { db } from "./db.js";

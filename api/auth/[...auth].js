@@ -1,3 +1,4 @@
+// Vercel deployment fix: update import path
 import "dotenv/config";
 import { auth } from "../_lib/auth.js";
 import { toNodeHandler } from "better-auth/node";
