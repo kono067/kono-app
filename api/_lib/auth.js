@@ -1,6 +1,6 @@
 // Auth configuration for Better Auth
 import { betterAuth } from "better-auth";
-import { kyselyAdapter } from "better-auth/adapters/kysely";
+import { kyselyAdapter } from "@better-auth/kysely-adapter";
 import { db } from "./db.js";
 
 export const auth = betterAuth({
