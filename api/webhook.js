@@ -1,4 +1,5 @@
-import { db } from "../src/lib/db";
+import "dotenv/config";
+import { db } from "./_lib/db.js";
 import { validateEvent } from "@polar-sh/sdk/webhooks";
 
 export const config = {

@@ -1,6 +1,6 @@
 import { betterAuth } from "better-auth";
 import { kyselyAdapter } from "better-auth/adapters/kysely";
-import { db } from "./db";
+import { db } from "./db.js";
 
 export const auth = betterAuth({
     database: kyselyAdapter(db, {

@@ -7,7 +7,8 @@ const url = process.env.TURSO_DATABASE_URL
 const authToken = process.env.TURSO_AUTH_TOKEN
 
 if (!url || !authToken) {
-  console.warn('TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is missing')
+  if (!url) console.error('CRITICAL: TURSO_DATABASE_URL is missing');
+  if (!authToken) console.error('CRITICAL: TURSO_AUTH_TOKEN is missing');
 }
 
 const client = createClient({

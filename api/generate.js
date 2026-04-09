@@ -1,6 +1,7 @@
+import "dotenv/config";
 import { GoogleGenAI } from "@google/genai";
-import { auth } from "../src/lib/auth";
-import { db } from "../src/lib/db";
+import { auth } from "./_lib/auth.js";
+import { db } from "./_lib/db.js";
 import { v4 as uuidv4 } from 'uuid';
 
 export default async function handler(req, res) {

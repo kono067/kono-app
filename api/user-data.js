@@ -1,5 +1,6 @@
-import { auth } from "../src/lib/auth";
-import { db } from "../src/lib/db";
+import "dotenv/config";
+import { auth } from "./_lib/auth.js";
+import { db } from "./_lib/db.js";
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

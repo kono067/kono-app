@@ -1,5 +1,6 @@
 import { Polar } from "@polar-sh/sdk";
-import { auth } from "../src/lib/auth";
+import "dotenv/config";
+import { auth } from "./_lib/auth.js";
 
 export default async function handler(req, res) {
   if (req.method !== 'GET') {

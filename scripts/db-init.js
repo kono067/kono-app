@@ -1,11 +1,15 @@
 import { createClient } from '@libsql/client';
-import 'dotenv/config';
 
 const url = process.env.TURSO_DATABASE_URL;
 const authToken = process.env.TURSO_AUTH_TOKEN;
 
+console.log('--- DB Config Check ---');
+console.log('URL defined:', !!url);
+console.log('Auth Token defined:', !!authToken);
+
 if (!url || !authToken) {
-  console.error('Error: TURSO_DATABASE_URL or TURSO_AUTH_TOKEN is missing in .env');
+  console.error('Error: Required environment variables are missing.');
+  console.log('If you are using Node 20+, run with: node --env-file=.env scripts/db-init.js');
   process.exit(1);
 }
 
